@@ -53,7 +53,29 @@ var CommandDeleteCmd = &cobra.Command{
 	RunE:    deleteCommandCmdF,
 }
 
+var CommandModifyCmd = &cobra.Command{
+	Use:   "modify",
+	Short: "modify a channel",
+	Long:  "modify a channel",
+	Example: `  command modify w16zb5tu3n1zkqo18goqry1je --title MyCommand
+	--description "My Command Description" --trigger-word mycommand
+	--url http://localhost:8000/my-slash-handler --creator myusername
+	--response-username my-bot-username
+	--icon http://localhost:8000/my-slash-handler-bot-icon.png --autocomplete --post`,
+	RunE: modifyCommandCmdF,
+}
+
 func init() {
+	CommandModifyCmd.Flags().String("title", "", "New Title")
+	CommandModifyCmd.Flags().String("description", "", "New Description")
+	CommandModifyCmd.Flags().String("trigger-word", "", "New Trigger-Word")
+	CommandModifyCmd.Flags().String("url", "", "New URL")
+	CommandModifyCmd.Flags().String("creator", "", "New Creator")
+	CommandModifyCmd.Flags().String("response-username", "", "New Response-Username")
+	CommandModifyCmd.Flags().String("icon", "", "New Icon")
+	CommandModifyCmd.Flags().Bool("autocomplete", false, "Set Autocomplete")
+	CommandModifyCmd.Flags().Bool("post", false, "Post Modifications")
+
 	CommandCreateCmd.Flags().String("title", "", "Command Title")
 	CommandCreateCmd.Flags().String("description", "", "Command Description")
 	CommandCreateCmd.Flags().String("trigger-word", "", "Command Trigger Word (required)")
@@ -74,6 +96,7 @@ func init() {
 		CommandMoveCmd,
 		CommandListCmd,
 		CommandDeleteCmd,
+		CommandModifyCmd,
 	)
 	RootCmd.AddCommand(CommandCmd)
 }
@@ -230,5 +253,57 @@ func deleteCommandCmdF(command *cobra.Command, args []string) error {
 		return deleteErr
 	}
 	CommandPrettyPrintln("Deleted command '" + commandID + "'")
+	return nil
+}
+
+func modifyCommandCmdF(command *cobra.Command, args []string) error {
+	if len(args) == 0 {
+		return errors.New("Missing ID")
+	}
+
+	a, err := InitDBCommandContextCobra(command)
+	if err != nil {
+		return err
+	}
+
+	oldModel, err := a.GetCommand(args[0])
+	if err != nil {
+		return err
+	}
+
+	title, _ := command.Flags().GetString("title")
+	description, _ := command.Flags().GetString("description")
+	trigger, _ := command.Flags().GetString("trigger")
+	url, _ := command.Flags().GetString("url")
+	creator, _ := command.Flags().GetString("creator")
+	responseUsername, _ := command.Flags().GetString("response-username")
+	icon, _ := command.Flags().GetString("icon")
+	autoComplete, _ := command.Flags().GetBool("autocomplete")
+
+	var method string
+	if post, _ := command.Flags().GetBool("post"); post {
+		method = model.COMMAND_METHOD_POST
+	} else {
+		method = model.COMMAND_METHOD_GET
+	}
+
+	newModel := &model.Command{
+		Id:           args[0],
+		DisplayName:  title,
+		Description:  description,
+		Trigger:      trigger,
+		URL:          url,
+		IconURL:      icon,
+		AutoComplete: autoComplete,
+		Username:     responseUsername,
+		Method:       method,
+		CreatorId:    creator,
+	}
+
+	_, err = a.UpdateCommand(oldModel, newModel)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

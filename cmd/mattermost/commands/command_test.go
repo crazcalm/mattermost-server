@@ -128,6 +128,71 @@ func TestCreateCommand(t *testing.T) {
 	}
 }
 
+func TestModifyCommand(t *testing.T) {
+	th := api4.Setup().InitBasic()
+	defer th.TearDown()
+	url := "http://localhost:8000/test-modify-command"
+	team := th.BasicTeam
+	user := th.BasicUser
+	th.LinkUserToTeam(user, team)
+
+	originalTitle := "old title"
+	originalDescription := "old description"
+	originalTrigger := "old trigger"
+	originalURL := url
+	originalIcon := "old icon"
+	originalAutoComplete := false
+	originalUsername := "old username"
+	originalMethod := model.COMMAND_METHOD_POST
+	originalCreator := "old creator"
+
+	newTitle := "new title"
+	newDescription := "new description"
+	newTrigger := "new trigger"
+	newURL := url + "-done"
+	newIcon := "new icon"
+	newAutoComplete := true
+	newUsername := "new username"
+	newMethod := model.COMMAND_METHOD_GET
+	newCreator := "new creator"
+
+	id := model.NewId()
+	c := &model.Command{
+		TeamId:       team.Id,
+		Id:           "modify_" + id,
+		DisplayName:  originalTitle,
+		Description:  originalDescription,
+		Trigger:      originalTrigger,
+		URL:          originalURL,
+		IconURL:      originalIcon,
+		AutoComplete: originalAutoComplete,
+		Username:     originalUsername,
+		Method:       originalMethod,
+		CreatorId:    originalCreator,
+	}
+
+	command, _ := th.Client.CreateCommand(c)
+	commands, _ := th.Client.ListCommands(team.Id, true)
+	assert.Equal(t, len(commands), 1)
+
+	CheckCommand(t, "command", "modify", command.Id, "--title", newTitle, "--description", newDescription, "--trigger", newTrigger,
+		"--url", newURL, "--creator", newCreator, "--response-username", newUsername, "--icon", newIcon, "--autocomplete", "--post")
+	commands, _ = th.Client.ListCommands(team.Id, true)
+
+	assert.Equal(t, len(commands), 1)
+	modifiedCommand := commands[0]
+
+	assert.Equal(t, modifiedCommand.DisplayName, newTitle)
+	assert.Equal(t, modifiedCommand.Description, newDescription)
+	assert.Equal(t, modifiedCommand.Trigger, newTrigger)
+	assert.Equal(t, modifiedCommand.URL, newURL)
+	assert.Equal(t, modifiedCommand.IconURL, newIcon)
+	assert.Equal(t, modifiedCommand.AutoComplete, newAutoComplete)
+	assert.Equal(t, modifiedCommand.Username, newUsername)
+	assert.Equal(t, modifiedCommand.Method, newMethod)
+	assert.Equal(t, modifiedCommand.CreatorId, newCreator)
+}
+
 func TestDeleteCommand(t *testing.T) {
 	th := api4.Setup().InitBasic()
 	defer th.TearDown()
