@@ -130,6 +130,7 @@ func TestCreateCommand(t *testing.T) {
 
 func TestModifyCommand(t *testing.T) {
 	th := api4.Setup().InitBasic()
+	th.InitSystemAdmin()
 	defer th.TearDown()
 	url := "http://localhost:8000/test-modify-command"
 	team := th.BasicTeam
