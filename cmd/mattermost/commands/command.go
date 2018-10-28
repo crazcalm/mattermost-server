@@ -257,6 +257,8 @@ func deleteCommandCmdF(command *cobra.Command, args []string) error {
 }
 
 func modifyCommandCmdF(command *cobra.Command, args []string) error {
+	fmt.Println("MODIFY COMMAND START")
+
 	if len(args) == 0 {
 		return errors.New("Missing ID")
 	}
@@ -265,15 +267,21 @@ func modifyCommandCmdF(command *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	defer a.Shutdown()
 
+	fmt.Printf("Command: %v\n", a)
+
+	fmt.Printf("\n\n\nArgs: %v\n\n\n", args)
 	oldModel, err := a.GetCommand(args[0])
 	if err != nil {
 		return err
 	}
 
+	fmt.Printf("\n\nOld model: %v\n\n\n", oldModel)
+
 	title, _ := command.Flags().GetString("title")
 	description, _ := command.Flags().GetString("description")
-	trigger, _ := command.Flags().GetString("trigger")
+	trigger, _ := command.Flags().GetString("trigger-word")
 	url, _ := command.Flags().GetString("url")
 	creator, _ := command.Flags().GetString("creator")
 	responseUsername, _ := command.Flags().GetString("response-username")
@@ -305,5 +313,6 @@ func modifyCommandCmdF(command *cobra.Command, args []string) error {
 		return err
 	}
 
+	fmt.Println("MODIFY COMMAND END")
 	return nil
 }

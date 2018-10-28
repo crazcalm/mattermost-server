@@ -137,6 +137,12 @@ func TestModifyCommand(t *testing.T) {
 	user := th.BasicUser
 	th.LinkUserToTeam(user, team)
 
+	// Check the appropriate permissions are enforced.
+	defaultRolePermissions := th.SaveDefaultRolePermissions()
+	defer func() {
+		th.RestoreDefaultRolePermissions(defaultRolePermissions)
+	}()
+
 	originalTitle := "old title"
 	originalDescription := "old description"
 	originalTrigger := "old trigger"
@@ -172,11 +178,24 @@ func TestModifyCommand(t *testing.T) {
 		CreatorId:    originalCreator,
 	}
 
+	c = &model.Command{
+		DisplayName: "dn_" + id,
+		Method:      "G",
+		TeamId:      team.Id,
+		Username:    user.Username,
+		URL:         url,
+		Trigger:     "test",
+	}
+
+	th.AddPermissionToRole(model.PERMISSION_MANAGE_SLASH_COMMANDS.Id, model.TEAM_USER_ROLE_ID)
+
 	command, _ := th.Client.CreateCommand(c)
 	commands, _ := th.Client.ListCommands(team.Id, true)
+	t.Log("----- Command ID -------> ")
+	t.Log(command.Id)
 	assert.Equal(t, len(commands), 1)
 
-	CheckCommand(t, "command", "modify", command.Id, "--title", newTitle, "--description", newDescription, "--trigger", newTrigger,
+	CheckCommand(t, "command", "modify", command.Id, "--title", newTitle, "--description", newDescription, "--trigger-word", newTrigger,
 		"--url", newURL, "--creator", newCreator, "--response-username", newUsername, "--icon", newIcon, "--autocomplete", "--post")
 	commands, _ = th.Client.ListCommands(team.Id, true)
 
